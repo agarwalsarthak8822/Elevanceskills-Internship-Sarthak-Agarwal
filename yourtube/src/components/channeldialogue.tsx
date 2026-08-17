@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import axiosInstance from "@/lib/axiosinstance";
-import { useUser } from "@/lib/AuthContext";
+import { useUser } from "@/lib/useUser";
 
 const Channeldialogue = ({ isopen, onclose, channeldata, mode }: any) => {
   const { user, login } = useUser();

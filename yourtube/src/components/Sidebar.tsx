@@ -3,6 +3,7 @@ import {
   Compass,
   PlaySquare,
   Clock,
+  Download,
   ThumbsUp,
   History,
   User,
@@ -11,14 +12,14 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Channeldialogue from "./channeldialogue";
-import { useUser } from "@/lib/AuthContext";
+import { useUser } from "@/lib/useUser";
 
 const Sidebar = () => {
   const { user } = useUser();
 
   const [isdialogeopen, setisdialogeopen] = useState(false);
   return (
-    <aside className="w-64 bg-white  border-r min-h-screen p-2">
+    <aside className="w-64 border-r min-h-screen p-2 theme-sidebar">
       <nav className="space-y-1">
         <Link href="/">
           <Button variant="ghost" className="w-full justify-start">
@@ -41,7 +42,7 @@ const Sidebar = () => {
 
         {user && (
           <>
-            <div className="border-t pt-2 mt-2">
+            <div className="border-t theme-border pt-2 mt-2">
               <Link href="/history">
                 <Button variant="ghost" className="w-full justify-start">
                   <History className="w-5 h-5 mr-3" />
@@ -60,8 +61,14 @@ const Sidebar = () => {
                   Watch later
                 </Button>
               </Link>
+              <Link href="/profile/downloads">
+                <Button variant="ghost" className="w-full justify-start">
+                  <Download className="w-5 h-5 mr-3" />
+                  My downloads
+                </Button>
+              </Link>
               {user?.channelname ? (
-                <Link href={`/channel/${user.id}`}>
+                <Link href={`/channel/${user._id}`}>
                   <Button variant="ghost" className="w-full justify-start">
                     <User className="w-5 h-5 mr-3" />
                     Your channel

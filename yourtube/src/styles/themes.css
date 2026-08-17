@@ -1,0 +1,128 @@
+[data-theme="dark"] {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #272727;
+  --bg-card: #1f1f1f;
+  --text-primary: #f1f1f1;
+  --text-secondary: #aaaaaa;
+  --border-color: #3f3f3f;
+  --nav-bg: #212121;
+  --hover-bg: #3f3f3f;
+  --yt-red: #cc0000;
+  --yt-blue: #3ea6ff;
+  --action-bg: rgba(255, 255, 255, 0.1);
+  --action-bg-hover: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f2f2;
+  --bg-card: #ffffff;
+  --text-primary: #0f0f0f;
+  --text-secondary: #606060;
+  --border-color: #e0e0e0;
+  --nav-bg: #ffffff;
+  --hover-bg: #f2f2f2;
+  --yt-red: #cc0000;
+  --yt-blue: #065fd4;
+  --action-bg: #f2f2f2;
+  --action-bg-hover: #e5e5e5;
+}
+
+.theme-page {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.theme-header {
+  background-color: var(--nav-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.theme-sidebar {
+  background-color: var(--nav-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.theme-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.theme-border {
+  border-color: var(--border-color);
+}
+
+.theme-hover:hover {
+  background-color: var(--hover-bg);
+}
+
+.theme-input-bg {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.theme-divider {
+  background-color: var(--border-color);
+}
+
+.theme-loading {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.theme-action-pill {
+  background-color: var(--action-bg);
+  color: var(--text-primary);
+  border-radius: 9999px;
+}
+
+.theme-action-pill:hover {
+  background-color: var(--action-bg-hover);
+}
+
+.theme-description {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px;
+}
+
+.theme-subscribe {
+  background-color: var(--yt-red);
+  color: #ffffff;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.theme-subscribe:hover {
+  background-color: #b80000;
+}
+
+.yt-link:hover {
+  color: var(--yt-blue);
+}
+
+.gesture-overlay-pill {
+  animation: gesture-fade var(--gesture-duration, 800ms) ease-out forwards;
+}
+
+@keyframes gesture-fade {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

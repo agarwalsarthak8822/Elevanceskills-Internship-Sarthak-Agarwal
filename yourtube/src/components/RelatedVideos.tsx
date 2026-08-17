@@ -1,6 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
+import VideoThumbnail from "./VideoThumbnail";
+import { formatVideoTitle } from "@/lib/videoUtils";
 
 interface RelatedVideosProps {
   videos: Array<{
@@ -9,30 +10,37 @@ interface RelatedVideosProps {
     videochanel: string;
     views: number;
     createdAt: string;
+    filepath?: string;
   }>;
+  currentVideoId?: string;
 }
-const vid = "/video/vdo.mp4";
-export default function RelatedVideos({ videos }: RelatedVideosProps) {
+
+export default function RelatedVideos({
+  videos,
+  currentVideoId,
+}: RelatedVideosProps) {
+  const related = videos.filter((video) => video._id !== currentVideoId);
+
   return (
-    <div className="space-y-2">
-      {videos.map((video) => (
+    <div className="space-y-3">
+      <h2 className="text-base font-medium mb-1">Up next</h2>
+      {related.map((video) => (
         <Link
           key={video._id}
           href={`/watch/${video._id}`}
-          className="flex gap-2 group"
+          className="flex gap-2 group rounded-lg p-1 -mx-1 theme-hover transition-colors"
         >
-          <div className="relative w-40 aspect-video bg-gray-100 rounded overflow-hidden flex-shrink-0">
-            <video
-              src={vid}
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
-            />
+          <div className="relative w-[168px] aspect-video rounded-lg overflow-hidden flex-shrink-0 theme-bg-secondary">
+            <VideoThumbnail filepath={video.filepath} hoverScale />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600">
-              {video.videotitle}
+          <div className="flex-1 min-w-0 py-0.5">
+            <h3 className="font-medium text-sm leading-snug line-clamp-2 group-hover:text-[#3ea6ff] transition-colors">
+              {formatVideoTitle(video.videotitle)}
             </h3>
-            <p className="text-xs text-gray-600 mt-1">{video.videochanel}</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs theme-text-secondary mt-1">
+              {video.videochanel}
+            </p>
+            <p className="text-xs theme-text-secondary">
               {video.views.toLocaleString()} views •{" "}
               {formatDistanceToNow(new Date(video.createdAt))} ago
             </p>

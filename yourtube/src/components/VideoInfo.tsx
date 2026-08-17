@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
   Clock,
+  Crown,
   Download,
   MoreHorizontal,
   Share,
@@ -10,24 +12,25 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useUser } from "@/lib/AuthContext";
+import { useUser } from "@/lib/useUser";
 import axiosInstance from "@/lib/axiosinstance";
+import { requestVideoDownload } from "@/lib/downloadApi";
+import { formatPlanLabel, hasPaidPlan, isFreePlan } from "@/lib/plans";
+import { formatVideoTitle } from "@/lib/videoUtils";
+import CallButton from "@/components/VideoCall/CallButton";
+import { toast } from "sonner";
 
 const VideoInfo = ({ video }: any) => {
+  const router = useRouter();
   const [likes, setlikes] = useState(video.Like || 0);
   const [dislikes, setDislikes] = useState(video.Dislike || 0);
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const { user } = useUser();
+  const { user, openAuthDialog, openUpgradeDialog } = useUser();
   const [isWatchLater, setIsWatchLater] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // const user: any = {
-  //   id: "1",
-  //   name: "John Doe",
-  //   email: "john@example.com",
-  //   image: "https://github.com/shadcn.png?height=32&width=32",
-  // };
   useEffect(() => {
     setlikes(video.Like || 0);
     setDislikes(video.Dislike || 0);
@@ -50,9 +53,13 @@ const VideoInfo = ({ video }: any) => {
       }
     };
     handleviews();
-  }, [user]);
+  }, [user, video._id]);
+
   const handleLike = async () => {
-    if (!user) return;
+    if (!user) {
+      openAuthDialog("signin");
+      return;
+    }
     try {
       const res = await axiosInstance.post(`/like/${video._id}`, {
         userId: user?._id,
@@ -74,7 +81,12 @@ const VideoInfo = ({ video }: any) => {
       console.log(error);
     }
   };
+
   const handleWatchLater = async () => {
+    if (!user) {
+      openAuthDialog("signin");
+      return;
+    }
     try {
       const res = await axiosInstance.post(`/watch/${video._id}`, {
         userId: user?._id,
@@ -88,8 +100,47 @@ const VideoInfo = ({ video }: any) => {
       console.log(error);
     }
   };
+
+  const handleDownload = async () => {
+    if (!user) {
+      openAuthDialog("signin");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const data = await requestVideoDownload(video._id);
+      const link = document.createElement("a");
+      link.href = data.downloadUrl;
+      link.download = data.filename || "video.mp4";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Download started");
+    } catch (error: any) {
+      if (
+        error?.response?.status === 403 &&
+        error?.response?.data?.reason === "limit_reached"
+      ) {
+        toast.error("Daily download limit reached. Upgrade for unlimited downloads.");
+        openUpgradeDialog("limit_reached", "gold");
+      } else {
+        toast.error(
+          error?.response?.data?.message || "Download failed. Please try again."
+        );
+      }
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleDislike = async () => {
-    if (!user) return;
+    if (!user) {
+      openAuthDialog("signin");
+      return;
+    }
     try {
       const res = await axiosInstance.post(`/like/${video._id}`, {
         userId: user?._id,
@@ -111,102 +162,141 @@ const VideoInfo = ({ video }: any) => {
       console.log(error);
     }
   };
+
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">{video.videotitle}</h1>
+      <h1 className="text-xl font-semibold leading-snug">
+        {formatVideoTitle(video.videotitle)}
+      </h1>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar className="w-10 h-10">
-            <AvatarFallback>{video.videochanel[0]}</AvatarFallback>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="w-10 h-10 flex-shrink-0">
+            <AvatarFallback className="theme-bg-secondary font-medium">
+              {video.videochanel?.[0]?.toUpperCase()}
+            </AvatarFallback>
           </Avatar>
-          <div>
-            <h3 className="font-medium">{video.videochanel}</h3>
-            <p className="text-sm text-gray-600">1.2M subscribers</p>
+          <div className="min-w-0">
+            <h3 className="font-medium truncate">{video.videochanel}</h3>
+            <p className="text-sm theme-text-secondary">1.2M subscribers</p>
           </div>
-          <Button className="ml-4">Subscribe</Button>
+          <Button className="theme-subscribe ml-2 hidden sm:inline-flex">
+            Subscribe
+          </Button>
+          <CallButton
+            calleeId={video.uploader}
+            calleeName={video.videochanel}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-gray-100 rounded-full">
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center theme-action-pill overflow-hidden">
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-l-full"
+              className="rounded-none hover:bg-transparent theme-action-pill rounded-l-full px-3"
               onClick={handleLike}
             >
               <ThumbsUp
-                className={`w-5 h-5 mr-2 ${
-                  isLiked ? "fill-black text-black" : ""
-                }`}
+                className={`w-5 h-5 mr-1 ${isLiked ? "fill-current" : ""}`}
               />
               {likes.toLocaleString()}
             </Button>
-            <div className="w-px h-6 bg-gray-300" />
+            <div className="w-px h-6 theme-divider" />
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-r-full"
+              className="rounded-none hover:bg-transparent theme-action-pill rounded-r-full px-3"
               onClick={handleDislike}
             >
               <ThumbsDown
-                className={`w-5 h-5 mr-2 ${
-                  isDisliked ? "fill-black text-black" : ""
-                }`}
+                className={`w-5 h-5 ${isDisliked ? "fill-current" : ""}`}
               />
-              {dislikes.toLocaleString()}
+              {dislikes > 0 && (
+                <span className="ml-1">{dislikes.toLocaleString()}</span>
+              )}
             </Button>
           </div>
+
           <Button
             variant="ghost"
             size="sm"
-            className={`bg-gray-100 rounded-full ${
-              isWatchLater ? "text-primary" : ""
-            }`}
+            className="theme-action-pill"
             onClick={handleWatchLater}
           >
             <Clock className="w-5 h-5 mr-2" />
-            {isWatchLater ? "Saved" : "Watch Later"}
+            {isWatchLater ? "Saved" : "Watch later"}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="bg-gray-100 rounded-full"
-          >
+
+          <Button variant="ghost" size="sm" className="theme-action-pill">
             <Share className="w-5 h-5 mr-2" />
             Share
           </Button>
+
           <Button
             variant="ghost"
             size="sm"
-            className="bg-gray-100 rounded-full"
+            className="theme-action-pill"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            title={
+              isFreePlan(user?.plan)
+                ? "Free plan: 1 download per day"
+                : "Unlimited downloads"
+            }
           >
             <Download className="w-5 h-5 mr-2" />
-            Download
+            {isDownloading ? "Downloading..." : "Download"}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="bg-gray-100 rounded-full"
-          >
+
+          <Button variant="ghost" size="icon" className="theme-action-pill">
             <MoreHorizontal className="w-5 h-5" />
           </Button>
         </div>
       </div>
-      <div className="bg-gray-100 rounded-lg p-4">
-        <div className="flex gap-4 text-sm font-medium mb-2">
-          <span>{video.views.toLocaleString()} views</span>
+
+      {user && isFreePlan(user.plan) && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border theme-border theme-bg-secondary px-4 py-3 text-sm">
+          <p className="theme-text-secondary">
+            Free plan includes <strong className="text-[var(--text-primary)]">1 download per day</strong>.
+            Upgrade for unlimited downloads.
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
+            onClick={() => router.push("/plans")}
+          >
+            <Crown className="w-4 h-4 mr-1" />
+            Go Premium
+          </Button>
+        </div>
+      )}
+
+      {user && hasPaidPlan(user.plan) && (
+        <div className="flex items-center gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5 text-sm text-yellow-600">
+          <Crown className="w-4 h-4 shrink-0" />
+          <span>
+            {formatPlanLabel(user.plan)} plan — unlimited downloads enabled
+          </span>
+        </div>
+      )}
+
+      <div className="theme-description p-4">
+        <div className="flex gap-4 text-sm font-medium mb-2 theme-text-secondary">
+          <span>{video.views?.toLocaleString() || 0} views</span>
           <span>{formatDistanceToNow(new Date(video.createdAt))} ago</span>
         </div>
-        <div className={`text-sm ${showFullDescription ? "" : "line-clamp-3"}`}>
+        <div className={`text-sm leading-relaxed ${showFullDescription ? "" : "line-clamp-3"}`}>
           <p>
-            Sample video description. This would contain the actual video
-            description from the database.
+            {video.description ||
+              "Sample video description. This would contain the actual video description from the database."}
           </p>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="mt-2 p-0 h-auto font-medium"
+          className="mt-2 p-0 h-auto font-medium theme-text-secondary hover:theme-text-secondary"
           onClick={() => setShowFullDescription(!showFullDescription)}
         >
           {showFullDescription ? "Show less" : "Show more"}

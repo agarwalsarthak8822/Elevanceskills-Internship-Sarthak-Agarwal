@@ -1,4 +1,4 @@
-import { Bell, Menu, Mic, Search, User, VideoIcon } from "lucide-react";
+import { Bell, Crown, Menu, Mic, Search, User, VideoIcon } from "lucide-react";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Link from "next/link";
@@ -13,10 +13,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Channeldialogue from "./channeldialogue";
 import { useRouter } from "next/router";
-import { useUser } from "@/lib/AuthContext";
+import { useUser } from "@/lib/useUser";
+import { isFreePlan } from "@/lib/plans";
+import { useTheme } from "@/context/ThemeContext";
+import { Moon, Sun } from "lucide-react";
 
 const Header = () => {
-  const { user, logout, handlegooglesignin } = useUser();
+  const { user, logout, openAuthDialog, loading } = useUser();
+  const { theme, toggleTheme } = useTheme();
   // const user: any = {
   //   id: "1",
   //   name: "John Doe",
@@ -38,7 +42,7 @@ const Header = () => {
     }
   };
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-white border-b">
+    <header className="flex items-center justify-between px-4 py-2 border-b theme-header">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon">
           <Menu className="w-6 h-6" />
@@ -50,7 +54,13 @@ const Header = () => {
             </svg>
           </div>
           <span className="text-xl font-medium">YourTube</span>
-          <span className="text-xs text-gray-400 ml-1">IN</span>
+          <span className="text-xs theme-text-secondary ml-1">IN</span>
+        </Link>
+        <Link
+          href="/plans"
+          className="text-sm font-medium theme-text-secondary hover:opacity-80 hidden sm:block"
+        >
+          Plans
         </Link>
       </div>
       <form
@@ -64,11 +74,11 @@ const Header = () => {
             value={searchQuery}
             onKeyPress={handleKeypress}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-l-full border-r-0 focus-visible:ring-0"
+            className="rounded-l-full border-r-0 focus-visible:ring-0 theme-input-bg"
           />
           <Button
             type="submit"
-            className="rounded-r-full px-6 bg-gray-50 hover:bg-gray-100 text-gray-600 border border-l-0"
+            className="rounded-r-full px-6 theme-bg-secondary theme-hover theme-text-secondary border border-l-0 theme-border"
           >
             <Search className="w-5 h-5" />
           </Button>
@@ -78,8 +88,35 @@ const Header = () => {
         </Button>
       </form>
       <div className="flex items-center gap-2">
-        {user ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+        >
+          {theme === "light" ? (
+            <Moon className="w-5 h-5" />
+          ) : (
+            <Sun className="w-5 h-5" />
+          )}
+        </Button>
+        {loading ? (
+          <Button variant="ghost" disabled>
+            Loading...
+          </Button>
+        ) : user ? (
           <>
+            {isFreePlan(user.plan) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden sm:flex items-center gap-1 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                onClick={() => router.push("/plans")}
+              >
+                <Crown className="w-4 h-4" />
+                Go Premium
+              </Button>
+            )}
             <Button variant="ghost" size="icon">
               <VideoIcon className="w-6 h-6" />
             </Button>
@@ -124,21 +161,37 @@ const Header = () => {
                 <DropdownMenuItem asChild>
                   <Link href="/watch-later">Watch later</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile/downloads">My downloads</Link>
+                </DropdownMenuItem>
+                {isFreePlan(user.plan) && (
+                  <DropdownMenuItem onClick={() => router.push("/plans")}>
+                    <Crown className="w-4 h-4 mr-2" />
+                    Go Premium
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
         ) : (
-          <>
+          <div className="flex items-center gap-2">
             <Button
+              variant="outline"
               className="flex items-center gap-2"
-              onClick={handlegooglesignin}
+              onClick={() => openAuthDialog("signin")}
             >
-              <User className="w-4 h-4" />
               Sign in
             </Button>
-          </>
+            <Button
+              className="flex items-center gap-2"
+              onClick={() => openAuthDialog("signup")}
+            >
+              <User className="w-4 h-4" />
+              Sign up
+            </Button>
+          </div>
         )}{" "}
       </div>
       <Channeldialogue

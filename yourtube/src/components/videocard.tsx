@@ -1,34 +1,34 @@
-"use clinet";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import VideoThumbnail from "./VideoThumbnail";
+import { formatVideoTitle } from "@/lib/videoUtils";
 
-const videos = "/video/vdo.mp4";
 export default function VideoCard({ video }: any) {
   return (
-    <Link href={`/watch/${video?._id}`} className="group">
+    <Link href={`/watch/${video?._id}`} className="group block">
       <div className="space-y-3">
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-          <video
-            src={`${process.env.BACKEND_URL}/${video?.filepath}`}
-            className="object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-          <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1 rounded">
-            10:24
-          </div>
+        <div className="relative aspect-video rounded-xl overflow-hidden theme-bg-secondary ring-1 ring-transparent group-hover:ring-[var(--border-color)] transition-all">
+          <VideoThumbnail filepath={video?.filepath} hoverScale />
         </div>
-        <div className="flex gap-3">
-          <Avatar className="w-9 h-9 flex-shrink-0">
-            <AvatarFallback>{video?.videochanel[0]}</AvatarFallback>
+        <div className="flex gap-3 pr-2">
+          <Avatar className="w-9 h-9 flex-shrink-0 mt-0.5">
+            <AvatarFallback className="theme-bg-secondary text-sm font-medium">
+              {video?.videochanel?.[0]?.toUpperCase() || "Y"}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600">
-              {video?.videotitle}
+            <h3 className="font-medium text-[15px] leading-snug line-clamp-2 group-hover:text-[#3ea6ff] transition-colors">
+              {formatVideoTitle(video?.videotitle)}
             </h3>
-            <p className="text-sm text-gray-600 mt-1">{video?.videochanel}</p>
-            <p className="text-sm text-gray-600">
-              {video?.views.toLocaleString()} views •{" "}
-              {formatDistanceToNow(new Date(video?.createdAt))} ago
+            <p className="text-sm theme-text-secondary mt-1.5 hover:opacity-100">
+              {video?.videochanel}
+            </p>
+            <p className="text-sm theme-text-secondary">
+              {video?.views?.toLocaleString() || 0} views •{" "}
+              {video?.createdAt
+                ? `${formatDistanceToNow(new Date(video.createdAt))} ago`
+                : "Recently"}
             </p>
           </div>
         </div>

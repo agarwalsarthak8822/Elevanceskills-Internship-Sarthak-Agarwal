@@ -1,7 +1,7 @@
 import comment from "../Modals/comment.js";
 import mongoose from "mongoose";
 import { validateCommentText } from "../utils/commentValidation.js";
-import { translateText } from "../services/translation.js";
+import { translateText, detectLanguage } from "../services/translation.js";
 
 export const postcomment = async (req, res) => {
   const { videoid, commentbody, city } = req.body;
@@ -112,11 +112,16 @@ export const translateComment = async (req, res) => {
   }
 
   try {
-    const translatedText = await translateText(text, targetLanguage);
+    const detectedLanguage = detectLanguage(text);
+    const translatedText = await translateText(
+      text,
+      targetLanguage,
+      detectedLanguage
+    );
 
     return res.status(200).json({
       translatedText,
-      detectedLanguage: "auto",
+      detectedLanguage,
     });
   } catch (error) {
     console.error("Translation error:", error);
@@ -189,6 +194,14 @@ export const dislikeComment = async (req, res) => {
     const commentDoc = await comment.findById(commentId);
     if (!commentDoc) {
       return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Auto-removal at 2 dislikes must come from OTHER users, so the author
+    // cannot dislike (and thereby help remove) their own comment.
+    if (commentDoc.userid && commentDoc.userid.toString() === userId) {
+      return res
+        .status(403)
+        .json({ message: "You cannot dislike your own comment" });
     }
 
     const userObjectId = new mongoose.Types.ObjectId(userId);

@@ -11,14 +11,16 @@ const tabs = [
 const Channeltabs = () => {
   const [activeTab, setActiveTab] = useState("videos");
   return (
-    <div className="border-b px-4">
+    <div className="border-b theme-border px-4">
       <div className="flex gap-8 overflow-x-auto">
         {tabs.map((tab) => (
           <Button
             key={tab.id}
             variant="ghost"
             className={`px-0 py-4 border-b-2 rounded-none ${
-              activeTab === tab.id ? "border-black text-black" : "border-transparent text-gray-600 hover:text-black"
+              activeTab === tab.id
+                ? "theme-text-primary theme-border-strong"
+                : "border-transparent theme-text-secondary"
             }`}
             onClick={() => setActiveTab(tab.id)}
           >

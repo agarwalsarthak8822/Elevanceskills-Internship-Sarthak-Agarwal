@@ -118,6 +118,33 @@ export const getCurrentUser = async (req, res) => {
   return res.status(200).json({ result: req.authUser });
 };
 
+// Basic international format check: optional +, then 8-15 digits (E.164-ish).
+// Twilio SMS requires a full number with country code, so we nudge toward that.
+const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
+
+export const updatePhone = async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone || !PHONE_REGEX.test(String(phone).trim())) {
+    return res.status(400).json({
+      message:
+        "Enter a valid phone number in international format, e.g. +919876543210",
+    });
+  }
+
+  try {
+    const updated = await users.findByIdAndUpdate(
+      req.authUser._id,
+      { $set: { phone: String(phone).trim() } },
+      { new: true }
+    );
+    return res.status(200).json({ result: updated });
+  } catch (error) {
+    console.error("Update phone error:", error.message);
+    return res.status(500).json({ message: "Failed to save phone number" });
+  }
+};
+
 export const signin = async (req, res) => {
   const { email, password } = req.body;
 

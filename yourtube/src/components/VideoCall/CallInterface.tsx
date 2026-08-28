@@ -9,6 +9,7 @@ import {
   VideoOff,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { cn } from "@/lib/utils";
 import { useVideoCall } from "@/hooks/useVideoCall";
 
 export default function CallInterface() {
@@ -17,6 +18,9 @@ export default function CallInterface() {
     remoteParticipantName,
     localVideoRef,
     remoteVideoRef,
+    remoteScreenRef,
+    remoteAudioRef,
+    remoteScreenActive,
     isMuted,
     isVideoOff,
     isScreenSharing,
@@ -51,21 +55,40 @@ export default function CallInterface() {
         </Button>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-4 min-h-0">
-        <div className="relative rounded-xl overflow-hidden bg-zinc-900 min-h-[220px]">
-          <div ref={remoteVideoRef} className="h-full w-full" />
-          <span className="absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
-            {remoteParticipantName || "Remote"}
-          </span>
-        </div>
+      <div className="flex-1 flex flex-col gap-3 p-4 min-h-0">
+        {remoteScreenActive && (
+          <div className="relative flex-1 rounded-xl overflow-hidden bg-zinc-900 min-h-[200px]">
+            <div ref={remoteScreenRef} className="h-full w-full" />
+            <span className="absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
+              {remoteParticipantName || "Remote"}&apos;s screen
+            </span>
+          </div>
+        )}
 
-        <div className="relative rounded-xl overflow-hidden bg-zinc-900 min-h-[220px]">
-          <div ref={localVideoRef} className="h-full w-full" />
-          <span className="absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
-            You
-          </span>
+        <div
+          className={cn(
+            "grid grid-cols-1 md:grid-cols-2 gap-3 min-h-0",
+            remoteScreenActive ? "h-40 md:h-44" : "flex-1"
+          )}
+        >
+          <div className="relative rounded-xl overflow-hidden bg-zinc-900 min-h-[160px]">
+            <div ref={remoteVideoRef} className="h-full w-full" />
+            <span className="absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
+              {remoteParticipantName || "Remote"}
+            </span>
+          </div>
+
+          <div className="relative rounded-xl overflow-hidden bg-zinc-900 min-h-[160px]">
+            <div ref={localVideoRef} className="h-full w-full" />
+            <span className="absolute bottom-2 left-2 text-xs bg-black/60 text-white px-2 py-1 rounded">
+              You
+            </span>
+          </div>
         </div>
       </div>
+
+      {/* Hidden sink that keeps remote audio elements alive and audible. */}
+      <div ref={remoteAudioRef} className="hidden" aria-hidden="true" />
 
       {callStatus === "connected" && (
         <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-6">

@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { useState } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import AuthDialog from "@/components/AuthDialog";
@@ -17,6 +18,7 @@ import CallInterface from "@/components/VideoCall/CallInterface";
 function AppShell({ Component, pageProps }: AppProps) {
   const { upgradeOpen, upgradeReason, upgradePlan, closeUpgradeDialog } = useUser();
   const { theme, locationChecked } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!locationChecked) {
     return (
@@ -28,7 +30,7 @@ function AppShell({ Component, pageProps }: AppProps) {
 
   return (
     <div data-theme={theme} className="min-h-screen theme-page">
-      <Header />
+      <Header onMenuClick={() => setSidebarOpen(true)} />
       <AuthDialog />
       <UpgradeModal
         open={upgradeOpen}
@@ -40,8 +42,10 @@ function AppShell({ Component, pageProps }: AppProps) {
       <CallInterface />
       <Toaster />
       <div className="flex">
-        <Sidebar />
-        <Component {...pageProps} />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex-1 min-w-0">
+          <Component {...pageProps} />
+        </div>
       </div>
     </div>
   );

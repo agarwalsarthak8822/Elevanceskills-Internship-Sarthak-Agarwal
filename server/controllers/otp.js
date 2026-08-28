@@ -1,6 +1,7 @@
 import Otp from "../Modals/Otp.js";
 import users from "../Modals/Auth.js";
 import { sendOtpEmail } from "../services/email.js";
+import { sendOtpSms } from "../services/sms.js";
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
 
@@ -24,6 +25,15 @@ export const sendOtp = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Mobile OTP needs a destination number. Fail early with a clear message
+    // rather than silently generating a code that can't be delivered.
+    if (channel === "mobile" && !user.phone) {
+      return res.status(400).json({
+        message:
+          "No mobile number is registered for this account. Please add a phone number to use mobile OTP.",
+      });
+    }
+
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
 
@@ -37,8 +47,7 @@ export const sendOtp = async (req, res) => {
     if (channel === "email") {
       await sendOtpEmail(user.email, otp);
     } else {
-      const phone = user.phone || "unknown";
-      console.log(`[DEV MODE] Mobile OTP for ${phone}: ${otp}`);
+      await sendOtpSms(user.phone, otp);
     }
 
     return res.status(200).json({ success: true, channel });

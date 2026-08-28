@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import axiosInstance from "@/lib/axiosinstance";
 
-const VideoUploader = ({ channelId, channelName }: any) => {
+const VideoUploader = ({ channelId, channelName, onUploaded }: any) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -75,6 +75,7 @@ const VideoUploader = ({ channelId, channelName }: any) => {
       });
       toast.success("Upload successfully");
       resetForm();
+      onUploaded?.();
     } catch (error) {
       console.error("Error uploading video:", error);
       toast.error("There was an error uploading your video. Please try again.");
@@ -83,20 +84,20 @@ const VideoUploader = ({ channelId, channelName }: any) => {
     }
   };
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
+    <div className="theme-card border rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-4">Upload a video</h2>
 
       <div className="space-y-4">
         {!videoFile ? (
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-100 transition-colors"
+            className="border-2 border-dashed theme-border rounded-lg p-8 text-center cursor-pointer theme-hover transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
             <p className="text-lg font-medium">
               Drag and drop video files to upload
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm theme-text-secondary mt-1">
               or click to select files
             </p>
             <p className="text-xs text-gray-400 mt-4">
@@ -112,13 +113,13 @@ const VideoUploader = ({ channelId, channelName }: any) => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
+            <div className="flex items-center gap-3 p-3 theme-bg-secondary rounded-lg border theme-border">
               <div className="bg-blue-100 p-2 rounded-md">
                 <FileVideo className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{videoFile.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm theme-text-secondary">
                   {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>

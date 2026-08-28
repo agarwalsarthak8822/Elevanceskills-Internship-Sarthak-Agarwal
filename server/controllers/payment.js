@@ -4,9 +4,8 @@ import {
   getRazorpayCredentials,
   getRazorpayInstance,
 } from "../config/razorpay.js";
-import {
-  getPlanAmountInPaise,
-} from "../utils/plans.js";
+import { getPlanAmountInPaise, getPlanRupees } from "../utils/plans.js";
+import { sendPlanInvoiceEmail } from "../services/email.js";
 
 const PREMIUM_CURRENCY = "INR";
 
@@ -84,16 +83,13 @@ export const createOrder = async (req, res) => {
 };
 
 export const verifyPayment = async (req, res) => {
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, plan } =
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
     req.body;
 
   if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
-    return res.status(400).json({ message: "Missing payment verification fields" });
-  }
-
-  const allowedPlans = ["bronze", "silver", "gold"];
-  if (!allowedPlans.includes(plan)) {
-    return res.status(400).json({ message: "Invalid plan" });
+    return res
+      .status(400)
+      .json({ message: "Missing payment verification fields" });
   }
 
   try {
@@ -102,7 +98,7 @@ export const verifyPayment = async (req, res) => {
       return res.status(500).json({ message: "Razorpay is not configured" });
     }
 
-    // Razorpay signature = HMAC-SHA256 of "order_id|payment_id" using key_secret
+    // 1) Verify the signature: HMAC-SHA256 of "order_id|payment_id".
     const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
       .createHmac("sha256", keySecret)
@@ -113,11 +109,57 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: "Invalid payment signature" });
     }
 
+    // 2) Trust the server-side order, NOT the client. The plan (and amount) are
+    //    read back from the order notes we set in createOrder, so a client can't
+    //    pay for bronze and claim gold.
+    const razorpay = getRazorpayInstance();
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const plan = order?.notes?.plan;
+    const orderUserId = order?.notes?.userId;
+
+    const allowedPlans = ["bronze", "silver", "gold"];
+    if (!allowedPlans.includes(plan)) {
+      return res
+        .status(400)
+        .json({ message: "Order is missing a valid plan" });
+    }
+
+    // 3) The order must belong to the authenticated user.
+    if (orderUserId && orderUserId !== req.authUser._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "This order does not belong to your account" });
+    }
+
+    // 4) Confirm the paid amount matches the plan's price.
+    if (order.amount !== getPlanAmountInPaise(plan)) {
+      return res
+        .status(400)
+        .json({ message: "Paid amount does not match the plan price" });
+    }
+
     const updatedUser = await users.findByIdAndUpdate(
       req.authUser._id,
-      { $set: { plan } },
+      { $set: { plan, planActivatedAt: new Date() } },
       { new: true }
     );
+
+    // 5) Send the invoice/confirmation email. Best-effort — never fail the
+    //    payment because email delivery hiccuped.
+    if (updatedUser?.email) {
+      try {
+        await sendPlanInvoiceEmail({
+          to: updatedUser.email,
+          name: updatedUser.name || updatedUser.channelname,
+          plan,
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          amountRupees: getPlanRupees(plan),
+        });
+      } catch (emailError) {
+        console.error("Invoice email failed:", emailError.message);
+      }
+    }
 
     return res.status(200).json({
       success: true,

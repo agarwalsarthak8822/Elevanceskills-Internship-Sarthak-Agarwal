@@ -16,7 +16,7 @@ import {
   signInWithGoogle,
   signUpWithEmail,
 } from "@/lib/firebase";
-import { signinWithPassword, completeLogin } from "@/lib/authApi";
+import { signinWithPassword, completeLogin, savePhone } from "@/lib/authApi";
 import { sendOtp, verifyOtp } from "@/lib/otpApi";
 import { isSouthIndianState } from "@/lib/southIndia";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ const AuthDialog = () => {
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [otpUserId, setOtpUserId] = useState("");
@@ -65,6 +66,7 @@ const AuthDialog = () => {
   const resetForm = () => {
     setName("");
     setEmail("");
+    setPhone("");
     setPassword("");
     setStep("credentials");
     setOtpUserId("");
@@ -86,6 +88,11 @@ const AuthDialog = () => {
 
   const startOtpFlow = async (userId: string) => {
     const channel = isSouthIndianState(detectedState) ? "email" : "mobile";
+
+    // Send the code first; only advance to the OTP screen once it's on its way,
+    // so a delivery failure (e.g. no phone on file) keeps the user on sign-in.
+    await sendOtp(userId, channel);
+
     setOtpUserId(userId);
     setOtpChannel(channel);
     setStep("otp");
@@ -93,11 +100,10 @@ const AuthDialog = () => {
     setOtpDigits(Array.from({ length: 6 }, () => ""));
     setOtpError("");
 
-    await sendOtp(userId, channel);
     toast.success(
       channel === "email"
         ? "OTP sent to your email"
-        : "OTP sent to your mobile (dev: check server terminal)"
+        : "OTP sent to your mobile"
     );
   };
 
@@ -108,7 +114,19 @@ const AuthDialog = () => {
     try {
       if (mode === "signup") {
         const firebaseUser = await signUpWithEmail({ email, password, name });
+        // Persist the phone number before finishing sign-in so that non-South
+        // users (who receive mobile OTP) have a delivery destination on file.
         await handleAuthSuccess(firebaseUser);
+        if (phone.trim()) {
+          try {
+            await savePhone(phone.trim());
+          } catch (phoneError: any) {
+            toast.error(
+              phoneError?.response?.data?.message ||
+                "Account created, but we couldn't save your phone number."
+            );
+          }
+        }
         resetForm();
         return;
       }
@@ -207,7 +225,7 @@ const AuthDialog = () => {
             <p className="text-sm theme-text-secondary">
               {otpChannel === "email"
                 ? "OTP sent to your email"
-                : "OTP sent to your mobile (dev: check server terminal)"}
+                : "OTP sent to your mobile number"}
             </p>
 
             <OtpInput
@@ -264,6 +282,26 @@ const AuthDialog = () => {
                     required
                     className="theme-input-bg"
                   />
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Mobile number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    pattern="^\+?[1-9][0-9]{7,14}$"
+                    required
+                    className="theme-input-bg"
+                  />
+                  <p className="text-xs theme-text-secondary">
+                    Include your country code. Used for mobile OTP sign-in
+                    outside South India.
+                  </p>
                 </div>
               )}
 

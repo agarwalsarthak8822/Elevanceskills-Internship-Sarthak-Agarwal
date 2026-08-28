@@ -4,6 +4,8 @@ import ChannelVideos from "@/components/ChannelVideos";
 import VideoUploader from "@/components/VideoUploader";
 import { useUser } from "@/lib/useUser";
 import { useRouter } from "next/router";
+import { useCallback, useEffect, useState } from "react";
+import axiosInstance from "@/lib/axiosinstance";
 
 export default function ChannelPage() {
   const router = useRouter();
@@ -11,42 +13,36 @@ export default function ChannelPage() {
   const { user } = useUser();
 
   const channel = user;
-  const videos = [
-    {
-      _id: "1",
-      videotitle: "Amazing Nature Documentary",
-      filename: "nature-doc.mp4",
-      filetype: "video/mp4",
-      filepath: "/videos/nature-doc.mp4",
-      filesize: "500MB",
-      videochanel: "Nature Channel",
-      Like: 1250,
-      views: 45000,
-      uploader: "nature_lover",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      _id: "2",
-      videotitle: "Cooking Tutorial Perfect Pasta",
-      filename: "pasta-tutorial.mp4",
-      filetype: "video/mp4",
-      filepath: "/videos/pasta-tutorial.mp4",
-      filesize: "300MB",
-      videochanel: "Chef Kitchen",
-      Like: 890,
-      views: 23000,
-      uploader: "chef_master",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ];
+  const [videos, setVideos] = useState<any[]>([]);
+
+  // Show this channel's real uploads (filtered by uploader id) instead of the
+  // hardcoded demo list this page used to render.
+  const loadVideos = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await axiosInstance.get("/video/getall");
+      const all = Array.isArray(res.data) ? res.data : [];
+      setVideos(all.filter((v: any) => String(v.uploader) === String(id)));
+    } catch {
+      setVideos([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadVideos();
+  }, [loadVideos]);
 
   return (
-    <div className="flex-1 min-h-screen bg-white">
+    <div className="flex-1 min-h-screen theme-page">
       <div className="max-w-full mx-auto">
         <ChannelHeader channel={channel} user={user} />
         <Channeltabs />
         <div className="px-4 pb-8">
-          <VideoUploader channelId={id} channelName={channel?.channelname} />
+          <VideoUploader
+            channelId={id}
+            channelName={channel?.channelname}
+            onUploaded={loadVideos}
+          />
         </div>
         <div className="px-4 pb-8">
           <ChannelVideos videos={videos} />

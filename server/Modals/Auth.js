@@ -13,6 +13,8 @@ const userschema = mongoose.Schema({
     default: "free",
   },
   phone: { type: String, default: "" },
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+  planActivatedAt: { type: Date },
   joinedon: { type: Date, default: Date.now },
 });
 

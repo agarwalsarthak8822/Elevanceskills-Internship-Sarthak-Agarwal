@@ -157,7 +157,9 @@ const CommentCard = ({
   return (
     <div className="flex gap-4">
         <Avatar className="w-10 h-10">
-          <AvatarFallback>{comment.usercommented[0]}</AvatarFallback>
+          <AvatarFallback>
+            {(comment.usercommented || "?").charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
 
       <div className="flex-1">
@@ -166,11 +168,11 @@ const CommentCard = ({
           {cityLabel && (
             <>
               <span className="text-xs text-gray-400">•</span>
-              <span className="text-xs text-gray-600">{cityLabel}</span>
+              <span className="text-xs theme-text-secondary">{cityLabel}</span>
             </>
           )}
           {commentedDate && (
-            <span className="text-xs text-gray-600">
+            <span className="text-xs theme-text-secondary">
               {formatDistanceToNow(new Date(commentedDate))} ago
             </span>
           )}
@@ -229,7 +231,7 @@ const CommentCard = ({
               >
                 <ThumbsUp
                   className={`w-4 h-4 mr-1 ${
-                    isLiked ? "fill-black text-black" : ""
+                    isLiked ? "fill-current" : ""
                   }`}
                 />
                 {comment.likes || 0}
@@ -244,7 +246,7 @@ const CommentCard = ({
               >
                 <ThumbsDown
                   className={`w-4 h-4 mr-1 ${
-                    isDisliked ? "fill-black text-black" : ""
+                    isDisliked ? "fill-current" : ""
                   }`}
                 />
                 {comment.dislikes || 0}
@@ -257,10 +259,15 @@ const CommentCard = ({
                     setTargetLanguage(e.target.value);
                     setTranslation(null);
                   }}
-                  className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs"
+                  aria-label="Translate comment to language"
+                  className="h-8 rounded-md border border-gray-300 bg-white px-2 text-xs text-gray-900"
                 >
                   {LANGUAGE_OPTIONS.map((lang) => (
-                    <option key={lang.value} value={lang.value}>
+                    <option
+                      key={lang.value}
+                      value={lang.value}
+                      className="bg-white text-gray-900"
+                    >
                       {lang.label}
                     </option>
                   ))}

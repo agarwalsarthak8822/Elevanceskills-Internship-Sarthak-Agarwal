@@ -16,7 +16,9 @@ interface UseVideoGesturesOptions {
   onToggleComments: () => void;
 }
 
-const TAP_RESET_MS = 300;
+// Window (ms) allowed between consecutive taps of the same multi-tap gesture.
+// A rolling timer resets on every tap, so a 3-tap gesture has up to ~2x this.
+const TAP_RESET_MS = 320;
 
 const getZone = (clientX: number, rect: DOMRect): GestureZone => {
   const ratio = (clientX - rect.left) / rect.width;
@@ -90,15 +92,18 @@ export function useVideoGestures({
   }, [videoRef, showOverlay]);
 
   const tryCloseWindow = useCallback(() => {
-    showOverlay({ message: "Closing...", zone: "right", duration: 500 });
+    showOverlay({ message: "✕ Closing site", zone: "right", duration: 700 });
     window.setTimeout(() => {
+      // window.close() only works for script-opened windows; for a normal tab
+      // the browser blocks it. Fall back to blanking the page so the site is
+      // effectively closed either way (no intrusive alert).
       window.close();
       window.setTimeout(() => {
         if (!window.closed) {
-          window.alert("Please close this tab manually");
+          window.location.href = "about:blank";
         }
-      }, 100);
-    }, 200);
+      }, 150);
+    }, 250);
   }, [showOverlay]);
 
   const processTaps = useCallback(
@@ -160,23 +165,16 @@ export function useVideoGestures({
     [containerRef, processTaps]
   );
 
-  const handleTap = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
+  // A single Pointer Events handler covers mouse, touch and pen with one
+  // non-duplicated event stream. This is the key fix for touch double-counting:
+  // wiring both onClick and onTouchEnd caused every tap to be counted twice on
+  // touch devices (touchend + the synthesized click), so a single tap read as a
+  // double tap. pointerup fires exactly once per physical tap on every device.
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      // Ignore secondary mouse buttons; only act on the primary pointer.
+      if (event.button !== 0 && event.pointerType === "mouse") return;
       handlePointer(event.clientX, event.clientY, event.currentTarget);
-    },
-    [handlePointer]
-  );
-
-  const handleTouchEnd = useCallback(
-    (event: React.TouchEvent<HTMLDivElement>) => {
-      if (event.changedTouches.length !== 1) return;
-
-      if (tapCountRef.current >= 1) {
-        event.preventDefault();
-      }
-
-      const touch = event.changedTouches[0];
-      handlePointer(touch.clientX, touch.clientY, event.currentTarget);
     },
     [handlePointer]
   );
@@ -188,5 +186,5 @@ export function useVideoGestures({
     };
   }, []);
 
-  return { handleTap, handleTouchEnd, activeGesture };
+  return { handlePointerUp, activeGesture };
 }

@@ -1,4 +1,5 @@
 import video from "../Modals/video.js";
+import { processUpload } from "../services/media.js";
 
 export const uploadvideo = async (req, res) => {
   if (req.file === undefined) {
@@ -7,10 +8,15 @@ export const uploadvideo = async (req, res) => {
       .json({ message: "plz upload a mp4 video file only" });
   } else {
     try {
+      // Convert the upload to a browser-playable H.264 MP4 (HEVC/10-bit phone
+      // videos otherwise show a blank player) and generate a poster frame.
+      // Degrades gracefully to the original file if ffmpeg isn't available.
+      const { filepath } = await processUpload(req.file.path);
+
       const file = new video({
         videotitle: req.body.videotitle,
         filename: req.file.originalname,
-        filepath: req.file.path,
+        filepath,
         filetype: req.file.mimetype,
         filesize: req.file.size,
         videochanel: req.body.videochanel,

@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BACKEND_URL } from "@/lib/constants";
-import { auth } from "@/lib/firebase";
 import { openRazorpayCheckout } from "@/lib/razorpay";
+import { createPremiumOrder } from "@/lib/paymentApi";
 import { formatPlanLabel, type UserPlan } from "@/lib/plans";
 import { useUser } from "@/lib/useUser";
 import { toast } from "sonner";
@@ -51,37 +50,9 @@ export default function PlansPage() {
     setProcessingPlan(planId);
 
     try {
-      const authToken =
-        typeof window !== "undefined"
-          ? localStorage.getItem("authToken")
-          : null;
-      let authorization = "";
-
-      if (authToken) {
-        authorization = `Bearer ${authToken}`;
-      } else {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          openAuthDialog("signin");
-          setProcessingPlan(null);
-          return;
-        }
-        authorization = `Bearer ${await currentUser.getIdToken()}`;
-      }
-
-      const res = await fetch(`${BACKEND_URL}/api/payment/create-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authorization,
-        },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to create order");
-      }
+      // createPremiumOrder uses axiosInstance, which attaches whichever token
+      // the user has (Firebase idToken or JWT from OTP login).
+      const data = await createPremiumOrder(planId);
 
       await openRazorpayCheckout({
         user,
@@ -107,7 +78,9 @@ export default function PlansPage() {
       });
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "Could not start checkout";
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ||
+        (error instanceof Error ? error.message : "Could not start checkout");
       toast.error(message);
       setProcessingPlan(null);
     }
@@ -133,8 +106,8 @@ export default function PlansPage() {
               return (
                 <div
                   key={plan.id}
-                  className={`rounded-lg border p-5 flex flex-col theme-card ${
-                    isCurrent ? "border-yellow-400 bg-yellow-50/50" : ""
+                  className={`rounded-xl border p-5 flex flex-col theme-card transition-shadow hover:shadow-md ${
+                    isCurrent ? "border-yellow-500 bg-yellow-500/10" : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-4">
@@ -142,7 +115,7 @@ export default function PlansPage() {
                       {formatPlanLabel(plan.id)}
                     </h2>
                     {isCurrent && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 shrink-0">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500/15 px-2 py-0.5 text-xs font-medium text-yellow-600 shrink-0">
                         <Crown className="w-3 h-3" />
                         Current Plan
                       </span>

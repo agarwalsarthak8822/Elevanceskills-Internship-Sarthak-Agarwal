@@ -1,4 +1,4 @@
-import { Bell, Crown, Menu, Mic, Search, User, VideoIcon } from "lucide-react";
+import { Bell, Crown, Menu, Mic, Search, User } from "lucide-react";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Link from "next/link";
@@ -12,13 +12,19 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import Channeldialogue from "./channeldialogue";
+import CallFriends from "./VideoCall/CallFriends";
 import { useRouter } from "next/router";
 import { useUser } from "@/lib/useUser";
 import { isFreePlan } from "@/lib/plans";
 import { useTheme } from "@/context/ThemeContext";
 import { Moon, Sun } from "lucide-react";
 
-const Header = () => {
+interface HeaderProps {
+  /** Opens the mobile navigation drawer (hamburger button, mobile only). */
+  onMenuClick?: () => void;
+}
+
+const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout, openAuthDialog, loading } = useUser();
   const { theme, toggleTheme } = useTheme();
   // const user: any = {
@@ -42,9 +48,15 @@ const Header = () => {
     }
   };
   return (
-    <header className="flex items-center justify-between px-4 py-2 border-b theme-header">
+    <header className="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 h-14 border-b theme-header">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+          className="md:hidden"
+        >
           <Menu className="w-6 h-6" />
         </Button>
         <Link href="/" className="flex items-center gap-1">
@@ -83,7 +95,13 @@ const Header = () => {
             <Search className="w-5 h-5" />
           </Button>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="rounded-full theme-bg-secondary theme-hover shrink-0"
+          aria-label="Search with your voice"
+        >
           <Mic className="w-5 h-5" />
         </Button>
       </form>
@@ -110,16 +128,14 @@ const Header = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="hidden sm:flex items-center gap-1 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                className="hidden sm:flex items-center gap-1 rounded-full border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/10"
                 onClick={() => router.push("/plans")}
               >
                 <Crown className="w-4 h-4" />
                 Go Premium
               </Button>
             )}
-            <Button variant="ghost" size="icon">
-              <VideoIcon className="w-6 h-6" />
-            </Button>
+            <CallFriends />
             <Button variant="ghost" size="icon">
               <Bell className="w-6 h-6" />
             </Button>
@@ -179,13 +195,13 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-full"
               onClick={() => openAuthDialog("signin")}
             >
               Sign in
             </Button>
             <Button
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-full"
               onClick={() => openAuthDialog("signup")}
             >
               <User className="w-4 h-4" />

@@ -7,8 +7,8 @@ export default function SearchPage() {
   const query = typeof q === "string" ? q : "";
 
   return (
-    <div className="flex-1 p-4">
-      <div className="max-w-6xl">
+    <div className="flex-1 min-h-screen p-4 md:p-6 theme-page">
+      <div className="max-w-6xl mx-auto">
         {query && (
           <div className="mb-6">
             <h1 className="text-xl font-medium mb-4">

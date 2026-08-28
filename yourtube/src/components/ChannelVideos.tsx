@@ -3,7 +3,7 @@ export default function ChannelVideos({ videos }: any) {
   if (videos.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">No videos uploaded yet.</p>
+        <p className="theme-text-secondary">No videos uploaded yet.</p>
       </div>
     );
   }

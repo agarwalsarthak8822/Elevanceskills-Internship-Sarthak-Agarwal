@@ -8,7 +8,7 @@ export default function VideoCard({ video }: any) {
   return (
     <Link href={`/watch/${video?._id}`} className="group block">
       <div className="space-y-3">
-        <div className="relative aspect-video rounded-xl overflow-hidden theme-bg-secondary ring-1 ring-transparent group-hover:ring-[var(--border-color)] transition-all">
+        <div className="relative aspect-video rounded-xl overflow-hidden theme-bg-secondary">
           <VideoThumbnail filepath={video?.filepath} hoverScale />
         </div>
         <div className="flex gap-3 pr-2">
@@ -18,10 +18,10 @@ export default function VideoCard({ video }: any) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-[15px] leading-snug line-clamp-2 group-hover:text-[#3ea6ff] transition-colors">
+            <h3 className="font-medium text-[15px] leading-snug line-clamp-2">
               {formatVideoTitle(video?.videotitle)}
             </h3>
-            <p className="text-sm theme-text-secondary mt-1.5 hover:opacity-100">
+            <p className="text-sm theme-text-secondary mt-1.5">
               {video?.videochanel}
             </p>
             <p className="text-sm theme-text-secondary">

@@ -12,7 +12,10 @@ const storage = multer.diskStorage({
   },
 });
 const filefilter = (req, file, cb) => {
-  if (file.mimetype === "video/mp4") {
+  // Accept any video container/codec. Anything that isn't already a
+  // browser-playable H.264 MP4 (e.g. HEVC, .mov, .webm) is converted after
+  // upload by the media service, so we don't need to restrict to video/mp4 here.
+  if (file.mimetype && file.mimetype.startsWith("video/")) {
     cb(null, true);
   } else {
     cb(null, false);

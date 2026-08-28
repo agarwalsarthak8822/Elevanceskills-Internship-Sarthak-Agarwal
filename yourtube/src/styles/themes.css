@@ -55,6 +55,14 @@
   color: var(--text-secondary);
 }
 
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-border-strong {
+  border-color: var(--text-primary);
+}
+
 .theme-bg-secondary {
   background-color: var(--bg-secondary);
 }

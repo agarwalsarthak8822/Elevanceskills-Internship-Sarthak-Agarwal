@@ -34,7 +34,7 @@ export default function RelatedVideos({
             <VideoThumbnail filepath={video.filepath} hoverScale />
           </div>
           <div className="flex-1 min-w-0 py-0.5">
-            <h3 className="font-medium text-sm leading-snug line-clamp-2 group-hover:text-[#3ea6ff] transition-colors">
+            <h3 className="font-medium text-sm leading-snug line-clamp-2">
               {formatVideoTitle(video.videotitle)}
             </h3>
             <p className="text-xs theme-text-secondary mt-1">

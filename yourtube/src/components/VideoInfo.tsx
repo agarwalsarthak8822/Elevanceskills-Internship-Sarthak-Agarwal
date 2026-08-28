@@ -109,27 +109,16 @@ const VideoInfo = ({ video }: any) => {
 
     setIsDownloading(true);
     try {
-      const data = await requestVideoDownload(video._id);
-      const link = document.createElement("a");
-      link.href = data.downloadUrl;
-      link.download = data.filename || "video.mp4";
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      await requestVideoDownload(video._id);
       toast.success("Download started");
     } catch (error: any) {
-      if (
-        error?.response?.status === 403 &&
-        error?.response?.data?.reason === "limit_reached"
-      ) {
-        toast.error("Daily download limit reached. Upgrade for unlimited downloads.");
+      if (error?.status === 403 && error?.reason === "limit_reached") {
+        toast.error(
+          "Daily download limit reached. Upgrade for unlimited downloads."
+        );
         openUpgradeDialog("limit_reached", "gold");
       } else {
-        toast.error(
-          error?.response?.data?.message || "Download failed. Please try again."
-        );
+        toast.error(error?.message || "Download failed. Please try again.");
       }
     } finally {
       setIsDownloading(false);

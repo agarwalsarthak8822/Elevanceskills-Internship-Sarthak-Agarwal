@@ -14,8 +14,10 @@ export interface VerifyPaymentPayload {
   plan: string;
 }
 
-export const createPremiumOrder = async (): Promise<CreateOrderResponse> => {
-  const res = await axiosInstance.post("/api/payment/create-order");
+export const createPremiumOrder = async (
+  plan: string
+): Promise<CreateOrderResponse> => {
+  const res = await axiosInstance.post("/api/payment/create-order", { plan });
   return res.data;
 };
 

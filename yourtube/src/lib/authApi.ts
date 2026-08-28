@@ -1,4 +1,5 @@
 import axios from "axios";
+import axiosInstance from "./axiosinstance";
 import { BACKEND_URL } from "./constants";
 
 export interface SigninResponse {
@@ -21,4 +22,11 @@ export const completeLogin = async (userId: string) => {
     userId,
   });
   return res.data as { result: any; token: string };
+};
+
+// Saves the signed-in user's phone number (used for mobile OTP delivery).
+// Goes through axiosInstance so the auth token (Firebase or JWT) is attached.
+export const savePhone = async (phone: string) => {
+  const res = await axiosInstance.patch("/user/phone", { phone });
+  return res.data as { result: any };
 };

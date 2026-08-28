@@ -2,8 +2,6 @@ import users from "../Modals/Auth.js";
 import { verifyFirebaseIdToken } from "../services/firebaseAuth.js";
 import { verifyJwt } from "../services/jwt.js";
 
-const isLikelyJwt = (token) => token.split(".").length === 3;
-
 const authenticateWithJwt = async (token) => {
   const payload = verifyJwt(token);
   const dbUser = await users.findById(payload.userId);
@@ -39,6 +37,19 @@ const authenticateWithFirebase = async (token) => {
   return dbUser;
 };
 
+// Both our own JWTs and Firebase ID tokens are 3-segment JWTs, so token shape
+// alone can't tell them apart. Our JWTs are HMAC (HS256) and verify locally;
+// Firebase ID tokens are RS256 and throw "invalid algorithm" if run through
+// verifyJwt. So try our own JWT first (fast, local) and fall back to Firebase —
+// the same strategy the socket handshake auth in index.js uses.
+const resolveUserFromToken = async (token) => {
+  try {
+    return await authenticateWithJwt(token);
+  } catch {
+    return await authenticateWithFirebase(token);
+  }
+};
+
 export const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
@@ -50,9 +61,7 @@ export const authenticate = async (req, res, next) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    req.authUser = isLikelyJwt(token)
-      ? await authenticateWithJwt(token)
-      : await authenticateWithFirebase(token);
+    req.authUser = await resolveUserFromToken(token);
 
     next();
   } catch (error) {
@@ -72,9 +81,7 @@ export const optionalAuthenticate = async (req, res, next) => {
       return next();
     }
 
-    req.authUser = isLikelyJwt(token)
-      ? await authenticateWithJwt(token)
-      : await authenticateWithFirebase(token);
+    req.authUser = await resolveUserFromToken(token);
   } catch (error) {
     console.error("Optional auth error:", error.message);
   }

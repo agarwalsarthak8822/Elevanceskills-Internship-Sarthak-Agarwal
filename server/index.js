@@ -29,11 +29,11 @@ const app = express();
 // Local development origins are always allowed. Production origins (e.g. your
 // deployed Vercel URL) are supplied via env so no code change is needed to
 // deploy: set CLIENT_URLS to a comma-separated list (or CLIENT_URL for one).
-const defaultOrigins = [
+origin: [
   "http://localhost:3000",
-  "http://127.0.0.1:3000",
   "http://10.57.41.17:3000",
   "http://10.198.101.17:3000",
+  "https://elevanceskills-internship-sarthak-agarwal-1.onrender.com"
 ];
 
 const envOrigins = [process.env.CLIENT_URL, process.env.CLIENT_URLS]

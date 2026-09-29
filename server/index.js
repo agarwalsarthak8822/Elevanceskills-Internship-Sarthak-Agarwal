@@ -31,7 +31,7 @@ const ALLOWED_ORIGINS = [
   "http://10.57.41.17:3000",
   "http://10.198.101.17:3000",
   "http://10.211.102.17:3000",
-  "https://elevanceskills-internship-sarthak-agarwal-1.onrender.com",
+  "https://elevanceskills-internship-sarthak.onrender.com",
 ];
 
 app.use(cors({
